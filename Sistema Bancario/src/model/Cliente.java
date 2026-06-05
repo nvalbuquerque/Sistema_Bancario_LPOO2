@@ -1,19 +1,25 @@
 package model;
 
+import java.time.LocalDateTime;
+
 public class Cliente implements Comparable<Cliente> {
+    private int id; 
     private String nome;
     private String sobrenome;
     private String rg;
     private String cpf;
     private String endereco;
     private Conta conta;
+    private LocalDateTime dataCadastro;
 
-    public Cliente(String nome, String sobrenome, String rg, String cpf, String endereco) {
+    public Cliente(int id, String nome, String sobrenome, String rg, String cpf, String endereco) {
+        setId(id);
         setNome(nome);
         setSobrenome(sobrenome);
         setRg(rg);
         setCpf(cpf);
         setEndereco(endereco);
+        this.dataCadastro = LocalDateTime.now();
     }
 
     public static void validarCpf(String cpf) {
@@ -33,6 +39,13 @@ public class Cliente implements Comparable<Cliente> {
     }
 
     // setters
+    public void setId(int id) {
+        if (id < 0) {
+            throw new IllegalArgumentException("O ID do cliente deve ser um número positivo maior que zero.");
+        }
+        this.id = id;
+    }
+
     public void setCpf(String cpf) {
         validarCpf(cpf);
         this.cpf = cpf.replaceAll("\\D", "");
@@ -57,6 +70,7 @@ public class Cliente implements Comparable<Cliente> {
     }
 
     // getters
+    public int getId() { return id; }
     public String getNome() { return nome; }
     public String getSobrenome() { return sobrenome; }
     public String getRg() { return rg; }         // já salvo sem formatação
@@ -64,7 +78,8 @@ public class Cliente implements Comparable<Cliente> {
     public String getEndereco() { return endereco; }
     public Conta getConta() { return conta; }
     public void setConta(Conta conta) { this.conta = conta; }
-
+    public LocalDateTime getDataCadastro() { return dataCadastro; }
+    
     @Override
     public int compareTo(Cliente outro) {
         int comparacaoNome = this.nome.compareToIgnoreCase(outro.nome);
