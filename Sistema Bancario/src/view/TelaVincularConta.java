@@ -1,6 +1,7 @@
 package view;
 
-import model.*; 
+import model.*;
+import controller.ContaController; 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -10,9 +11,9 @@ import java.awt.event.ActionListener;
 public class TelaVincularConta extends JDialog {
 
     private Cliente cliente;
+    private ContaController contaController; 
 
     private JComboBox<String> cmbTipoConta;
-
     private JPanel painelCartoes;
     private CardLayout cardLayout;
 
@@ -26,13 +27,13 @@ public class TelaVincularConta extends JDialog {
     public TelaVincularConta(Frame owner, Cliente cliente) {
         super(owner, true);
         this.cliente = cliente;
+        this.contaController = new ContaController(); 
 
         if (cliente.getConta() != null) {
             JOptionPane.showMessageDialog(this,
                     "O cliente " + cliente.getNome() + " já possui uma conta vinculada.",
                     "Conta Existente",
                     JOptionPane.WARNING_MESSAGE);
-
             dispose();
             return;
         }
@@ -122,24 +123,18 @@ public class TelaVincularConta extends JDialog {
     private void salvarConta() {
         String tipo = (String) cmbTipoConta.getSelectedItem();
 
-        int numConta = RepositorioDados.getInstance().gerarProximoNumeroConta();
-
-        ContaCorrente novaCC = null;
-        ContaInvestimento novaCI = null;
-
         try {
             if ("Conta Corrente".equals(tipo)) {
-
                 double depInicial = Double.parseDouble(txtDepIniCC.getText());
                 double limite = Double.parseDouble(txtLimiteCC.getText());
 
                 if (depInicial < 0 || limite < 0)
                     throw new NumberFormatException("Valores não podem ser negativos.");
 
-                novaCC = new ContaCorrente(cliente, numConta, depInicial, limite);
+                
+                contaController.criarContaCorrente(cliente, depInicial, limite);
 
             } else if ("Conta Investimento".equals(tipo)) {
-
                 double montanteMin = Double.parseDouble(txtMontanteMinCI.getText());
                 double depMin = Double.parseDouble(txtDepMinCI.getText());
                 double depInicial = Double.parseDouble(txtDepIniCI.getText());
@@ -147,7 +142,8 @@ public class TelaVincularConta extends JDialog {
                 if (montanteMin < 0 || depMin < 0 || depInicial < 0)
                     throw new NumberFormatException("Valores não podem ser negativos.");
 
-                novaCI = new ContaInvestimento(cliente, numConta, depInicial, montanteMin, depMin);
+                
+                contaController.criarContaInvestimento(cliente, depInicial, montanteMin, depMin);
 
             } else {
                 JOptionPane.showMessageDialog(this,
@@ -157,32 +153,28 @@ public class TelaVincularConta extends JDialog {
                 return;
             }
 
+
+            JOptionPane.showMessageDialog(this,
+                    "Conta vinculada ao cliente " + cliente.getNome() + " com sucesso!");
+            dispose();
+
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this,
                     "Valores inválidos. Verifique se todos os campos numéricos foram preenchidos corretamente.",
                     "Erro de Dados",
                     JOptionPane.ERROR_MESSAGE);
-            return;
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this,
                     ex.getMessage(),
-                    "Erro ao Criar Conta",
+                    "Erro de Regra de Negócio",
                     JOptionPane.ERROR_MESSAGE);
-            return;
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Erro ao salvar no banco de dados: " + ex.getMessage(),
+                    "Erro de Conexão",
+                    JOptionPane.ERROR_MESSAGE);
         }
-
-        if (novaCC != null) {
-            RepositorioDados.getInstance().adicionarContaCorrente(novaCC);
-            cliente.setConta(novaCC);
-        } else if (novaCI != null) {
-            RepositorioDados.getInstance().adicionarContaInvestimento(novaCI);
-            cliente.setConta(novaCI);
-        }
-
-        JOptionPane.showMessageDialog(this,
-                "Conta " + numConta + " vinculada ao cliente " + cliente.getNome() + " com sucesso!");
-
-        dispose();
     }
 }

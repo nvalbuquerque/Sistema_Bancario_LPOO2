@@ -4,8 +4,9 @@ public class ContaCorrente extends Conta {
 
     private double limite;
 
-    public ContaCorrente(Cliente dono, int numero, double depositoInicial, double limite) {
-        super(dono, numero, depositoInicial);
+    public ContaCorrente(Cliente cliente, int numero, double depositoInicial, double limite) {
+
+        super(cliente, numero, depositoInicial);
 
         if (limite < 0) {
             throw new IllegalArgumentException("O limite não pode ser negativo.");
@@ -16,27 +17,31 @@ public class ContaCorrente extends Conta {
 
     @Override
     public boolean saca(double valor) {
+
         if (valor <= 0) {
-            throw new IllegalArgumentException("O valor do saque deve ser positivo.");
+            System.out.println("Saque inválido: valor deve ser positivo.");
+            return false;
         }
 
         if (saldo - valor < -limite) {
-            throw new IllegalStateException(
-                "Saque excede o limite disponível. Limite permitido: R$ " + limite
-            );
+            System.out.println("Saque negado: ultrapassa o limite da conta corrente.");
+            return false;
         }
 
         saldo -= valor;
+        System.out.println("Saque realizado com sucesso. Saldo atual: " + saldo);
         return true;
     }
 
     @Override
     public void remunera() {
-        if (saldo <= 0) {
-            throw new IllegalStateException("Saldo negativo.");
+
+        if (saldo > 0) {
+            saldo += saldo * 0.01;
+            System.out.println("Remuneração de 1% aplicada. Saldo atual: " + saldo);
+        } else {
+            System.out.println("Remuneração não aplicada: saldo não positivo.");
         }
-        // Conta Corrente recebe 1% se estiver com saldo positivo
-        saldo += saldo * 0.01;
     }
 
     public double getLimite() {
@@ -46,7 +51,8 @@ public class ContaCorrente extends Conta {
     public void setLimite(double limite) {
 
         if (limite < 0) {
-            throw new IllegalArgumentException("O limite não pode ser negativo.");
+            System.out.println("Limite inválido.");
+            return;
         }
 
         this.limite = limite;

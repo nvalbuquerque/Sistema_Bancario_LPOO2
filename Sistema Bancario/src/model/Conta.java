@@ -8,7 +8,7 @@ public abstract class Conta implements ContaInterface {
 
     public Conta(Cliente dono, int numero, double depositoInicial) {
         if (depositoInicial < 0) {
-            throw new IllegalArgumentException("Depósito inicial não pode ser negativo.");
+            throw new IllegalArgumentException("Depósito inicial não pode ser negativo."); 
         }
         this.dono = dono;
         this.numero = numero;
@@ -18,23 +18,28 @@ public abstract class Conta implements ContaInterface {
     @Override
     public boolean deposita(double valor) {
         if (valor <= 0) {
-            throw new IllegalArgumentException("Valor de depósito deve ser positivo.");
+            System.out.println("Depósito inválido: O valor deve ser positivo.");
+            return false; 
         }
         saldo += valor;
+        System.out.println("Depósito realizado com sucesso. Novo saldo: R$ " + saldo);
         return true;
     }
 
     @Override
     public boolean saca(double valor) {
         if (valor <= 0) {
-            throw new IllegalArgumentException("Valor de saque deve ser positivo.");
+            System.out.println("Saque inválido: O valor deve ser positivo.");
+            return false; 
         }
 
         if (saldo < valor) {
-            throw new IllegalStateException("Saldo insuficiente para saque.");
+            System.out.println("Saque inválido: Saldo insuficiente.");
+            return false;
         }
 
         saldo -= valor;
+        System.out.println("Saque realizado com sucesso. Novo saldo: R$ " + saldo);
         return true;
     }
 
@@ -51,5 +56,9 @@ public abstract class Conta implements ContaInterface {
     @Override
     public double getSaldo() {
         return saldo;
+    }
+
+    public void setSaldo(double saldo) { 
+    this.saldo = saldo;
     }
 }

@@ -1,54 +1,57 @@
 package controller;
 
-import java.util.ArrayList;
-import java.util.List;
+
 import model.Cliente;
 import model.Conta;
 import model.ContaCorrente;
 import model.ContaInvestimento;
-import model.RepositorioDados;
-
-// está usando o local
-// quando for usar o banco de dados, tem que usar o Dao, e não o RepositorioDados
-// aguardar task Laura
+import model.dao.ContaDao;
+import model.dao.ContaDaoSql;
 
 public class ContaController {
-    private RepositorioDados repositorio;
+    private ContaDao contaDao;
 
     public ContaController() {
-        this(RepositorioDados.getInstance());
+        this.contaDao = ContaDaoSql.getContaDaoSql();
     }
 
-    public ContaController(RepositorioDados repositorio) {
-        this.repositorio = repositorio;
-    }
-
-    public ContaCorrente criarContaCorrente(Cliente cliente, double depositoInicial, double limite) {
-        int numero = repositorio.gerarProximoNumeroConta();
+    public ContaCorrente criarContaCorrente(Cliente cliente, double depositoInicial, double limite) throws Exception {
+        int numero = contaDao.gerarProximoNumero();
         ContaCorrente conta = new ContaCorrente(cliente, numero, depositoInicial, limite);
-        cliente.setConta(conta);
-        repositorio.adicionarContaCorrente(conta);
+        contaDao.add(conta);
         return conta;
     }
 
     public ContaInvestimento criarContaInvestimento(Cliente cliente, double depositoInicial,
-            double montanteMinimo, double depositoMinimo) {
-        int numero = repositorio.gerarProximoNumeroConta();
-        ContaInvestimento conta = new ContaInvestimento(
-                cliente, numero, depositoInicial, montanteMinimo, depositoMinimo);
-        cliente.setConta(conta);
-        repositorio.adicionarContaInvestimento(conta);
+            double montanteMinimo, double depositoMinimo) throws Exception {
+        int numero = contaDao.gerarProximoNumero();
+        ContaInvestimento conta = new ContaInvestimento(cliente, numero, depositoInicial, montanteMinimo, depositoMinimo);
+        contaDao.add(conta);
         return conta;
     }
 
-    public Conta buscarContaPorCpf(String cpf) {
-        return repositorio.buscarContaPorCpf(cpf);
+    public Conta buscarContaPorCpf(String cpf) throws Exception {
+        return contaDao.getByCpf(cpf);
     }
 
-    public List<Conta> listarContas() {
-        List<Conta> contas = new ArrayList<>();
-        contas.addAll(repositorio.getListaContasCorrente());
-        contas.addAll(repositorio.getListaContasInvestimento());
-        return contas;
+    public boolean sacar(Conta conta, double valor) throws Exception {
+        if (conta.saca(valor)) {
+            contaDao.updateSaldo(conta);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean depositar(Conta conta, double valor) throws Exception {
+        if (conta.deposita(valor)) {
+            contaDao.updateSaldo(conta);
+            return true;
+        }
+        return false;
+    }
+
+    public void remunerar(Conta conta) throws Exception {
+        conta.remunera();
+        contaDao.updateSaldo(conta);
     }
 }

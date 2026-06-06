@@ -2,6 +2,7 @@ package view;
 
 import model.Conta;
 import model.ContaCorrente;
+import controller.ContaController; 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -10,6 +11,7 @@ import java.text.DecimalFormat;
 public class TelaOperacoesConta extends JDialog {
 
     private Conta conta;
+    private ContaController contaController; 
     private JLabel lblSaldoAtual;
     private JTextField txtValor;
     private final DecimalFormat df = new DecimalFormat("R$ #,##0.00");
@@ -17,13 +19,13 @@ public class TelaOperacoesConta extends JDialog {
     public TelaOperacoesConta(Frame owner, Conta conta) {
         super(owner, true);
         this.conta = conta;
+        this.contaController = new ContaController(); 
 
         setTitle("Operações da Conta: " + conta.getNumero() + " (" + conta.getDono().getNome() + ")");
         setBounds(250, 250, 400, 300);
         setLayout(new BorderLayout(10, 10));
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Painel Central
         JPanel painelCentro = new JPanel(new GridLayout(3, 1, 5, 5));
 
         lblSaldoAtual = new JLabel();
@@ -36,7 +38,6 @@ public class TelaOperacoesConta extends JDialog {
         atualizarSaldoVisual();
         add(painelCentro, BorderLayout.NORTH);
 
-        // Painel Botões
         JPanel painelBotoes = new JPanel(new GridLayout(2, 2, 10, 10));
 
         JButton btnSaque = new JButton("Sacar");
@@ -71,9 +72,6 @@ public class TelaOperacoesConta extends JDialog {
                 "Ver Saldo", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /**
-     * Lê apenas valores numéricos. Regras de valor > 0 ficam no modelo (Conta).
-     */
     private double getValorDigitado() {
         try {
             return Double.parseDouble(txtValor.getText());
@@ -90,18 +88,24 @@ public class TelaOperacoesConta extends JDialog {
         if (valor == -1) return;
 
         try {
-            conta.saca(valor);
+            boolean sucesso = contaController.sacar(conta, valor);
 
+            if (sucesso) {
+                JOptionPane.showMessageDialog(this,
+                        "Saque de " + df.format(valor) + " efetuado com sucesso!",
+                        "Saque", JOptionPane.INFORMATION_MESSAGE);
+                atualizarSaldoVisual();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Saque não permitido. Verifique as regras e os limites da sua conta.",
+                        "Operação Negada",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Saque de " + df.format(valor) + " efetuado com sucesso!",
-                    "Saque", JOptionPane.INFORMATION_MESSAGE);
-
-            atualizarSaldoVisual();
-
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            JOptionPane.showMessageDialog(this,
-                    ex.getMessage(),
-                    "Erro no Saque",
+                    "Erro de comunicação com o banco de dados: " + ex.getMessage(),
+                    "Erro no Sistema",
                     JOptionPane.ERROR_MESSAGE);
         }
 
@@ -113,18 +117,24 @@ public class TelaOperacoesConta extends JDialog {
         if (valor == -1) return;
 
         try {
-            conta.deposita(valor);
+            boolean sucesso = contaController.depositar(conta, valor);
 
+            if (sucesso) {
+                JOptionPane.showMessageDialog(this,
+                        "Depósito de " + df.format(valor) + " efetuado com sucesso!",
+                        "Depósito", JOptionPane.INFORMATION_MESSAGE);
+                atualizarSaldoVisual();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Depósito não permitido. Verifique as regras (ex: valor negativo ou depósito mínimo exigido).",
+                        "Operação Negada",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Depósito de " + df.format(valor) + " efetuado com sucesso!",
-                    "Depósito", JOptionPane.INFORMATION_MESSAGE);
-
-            atualizarSaldoVisual();
-
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this,
-                    ex.getMessage(),
-                    "Erro no Depósito",
+                    "Erro de comunicação com o banco de dados: " + ex.getMessage(),
+                    "Erro no Sistema",
                     JOptionPane.ERROR_MESSAGE);
         }
 
@@ -133,7 +143,7 @@ public class TelaOperacoesConta extends JDialog {
 
     private void remunerarConta() {
         try {
-            conta.remunera();
+            contaController.remunerar(conta);
 
             String tipoConta = (conta instanceof ContaCorrente)
                     ? "Conta Corrente (1%)"
@@ -147,7 +157,7 @@ public class TelaOperacoesConta extends JDialog {
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Erro ao aplicar remuneração: " + e.getMessage(),
+                    "Erro ao aplicar remuneração no banco de dados: " + e.getMessage(),
                     "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }

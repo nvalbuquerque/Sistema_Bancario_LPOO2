@@ -5,9 +5,9 @@ public class ContaInvestimento extends Conta {
     private double montanteMinimo;
     private double depositoMinimo;
 
-    public ContaInvestimento(Cliente dono, int numero, double depositoInicial,
+    public ContaInvestimento(Cliente cliente, int numero, double depositoInicial,
                              double montanteMinimo, double depositoMinimo) {
-        super(dono, numero, depositoInicial);
+        super(cliente, numero, depositoInicial);
         this.montanteMinimo = montanteMinimo;
         this.depositoMinimo = depositoMinimo;
 
@@ -22,9 +22,8 @@ public class ContaInvestimento extends Conta {
     public boolean deposita(double valor) {
 
         if (valor < depositoMinimo) {
-            throw new IllegalArgumentException(
-                "Depósito mínimo exigido: R$ " + depositoMinimo
-            );
+            System.out.println("Depósito inválido: O valor deve ser >= depósito mínimo.");
+            return false;
         }
 
         return super.deposita(valor);
@@ -40,12 +39,17 @@ public class ContaInvestimento extends Conta {
         }
 
         if ((saldo - valor) < montanteMinimo) {
-            throw new IllegalArgumentException(
-                "Saque não permitido. O saldo após o saque deve ser >= R$ " + montanteMinimo
-            );
+            System.out.println("Saque inválido: Saldo insuficiente.");
+            return false;
         }
 
-        return super.saca(valor);
+        boolean deucerto = super.saca(valor);
+
+        if (deucerto) {
+            System.out.println("Saque realizado com sucesso na conta investimento.");
+        }
+
+        return deucerto;
     }
 
     @Override
