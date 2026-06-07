@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import model.Cliente;
+import model.Conta;
 
 public class ClienteDaoSql implements ClienteDao {
 
@@ -27,7 +28,7 @@ public class ClienteDaoSql implements ClienteDao {
         else
             return dao;
     }  
-    
+
     @Override
     public void add(Cliente cliente) throws Exception {        
         try (Connection connection = ConnectionFactory.getConnection();
@@ -66,9 +67,13 @@ public class ClienteDaoSql implements ClienteDao {
                 String cpf = rs.getString("cpf");
                 String endereco = rs.getString("endereco");
 
-                cliente.add(new Cliente(id, nome, sobrenome, rg, cpf, endereco));
+                Cliente c = new Cliente( id, nome, sobrenome, rg, cpf, endereco );
+                Conta conta = ContaDaoSql.getContaDaoSql().getByCpf(cpf);
+                c.setConta(conta);
+
+                cliente.add(c);
             }  
-            return cliente;
+                return cliente;
         }
     }
 
@@ -124,14 +129,19 @@ public class ClienteDaoSql implements ClienteDao {
             stmt.setLong(1, id); 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Cliente(
-                        rs.getInt("id"),
-                        rs.getString("nome"),
-                        rs.getString("sobrenome"),
-                        rs.getString("rg"),
-                        rs.getString("cpf"),
-                        rs.getString("endereco")
-                    );
+                   Cliente cliente = new Cliente(
+                    rs.getInt("id"),
+                    rs.getString("nome"),
+                    rs.getString("sobrenome"),
+                    rs.getString("rg"),
+                    rs.getString("cpf"),
+                    rs.getString("endereco")
+                );
+                cliente.setConta(
+                ContaDaoSql.getContaDaoSql()
+                .getByCpf(cliente.getCpf())
+                );
+                return cliente;
                 }
             }
         }
@@ -147,14 +157,19 @@ public class ClienteDaoSql implements ClienteDao {
             stmt.setString(1, cpf); 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Cliente(
-                        rs.getInt("id"),
-                        rs.getString("nome"),
-                        rs.getString("sobrenome"),
-                        rs.getString("rg"),
-                        rs.getString("cpf"),
-                        rs.getString("endereco")
-                    );
+                   Cliente cliente = new Cliente(
+                    rs.getInt("id"),
+                    rs.getString("nome"),
+                    rs.getString("sobrenome"),
+                    rs.getString("rg"),
+                    rs.getString("cpf"),
+                    rs.getString("endereco")
+                );
+                cliente.setConta(
+                ContaDaoSql.getContaDaoSql()
+                .getByCpf(cliente.getCpf())
+                );
+                return cliente;
                 }
             }
         }
@@ -170,7 +185,7 @@ public class ClienteDaoSql implements ClienteDao {
             stmt.setString(1, rg); 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Cliente(
+                    Cliente cliente = new Cliente(
                         rs.getInt("id"),
                         rs.getString("nome"),
                         rs.getString("sobrenome"),
@@ -178,6 +193,11 @@ public class ClienteDaoSql implements ClienteDao {
                         rs.getString("cpf"),
                         rs.getString("endereco")
                     );
+                    cliente.setConta(
+                        ContaDaoSql.getContaDaoSql()
+                            .getByCpf(cliente.getCpf())
+                    );
+                    return cliente;
                 }
             }
         }
@@ -194,14 +214,19 @@ public class ClienteDaoSql implements ClienteDao {
             try (ResultSet rs = stmt.executeQuery()) {
                 List<Cliente> clientes = new ArrayList<>();
                 while (rs.next()) {
-                    clientes.add(new Cliente(
+                    Cliente cliente = new Cliente(
                         rs.getInt("id"),
                         rs.getString("nome"),
                         rs.getString("sobrenome"),
                         rs.getString("rg"),
                         rs.getString("cpf"),
                         rs.getString("endereco")
-                    ));
+                    );
+                    cliente.setConta(
+                        ContaDaoSql.getContaDaoSql()
+                            .getByCpf(cliente.getCpf())
+                    );
+                    clientes.add(cliente);
                 }
                 return clientes;
             }
@@ -218,18 +243,22 @@ public class ClienteDaoSql implements ClienteDao {
             try (ResultSet rs = stmt.executeQuery()) {
                 List<Cliente> clientes = new ArrayList<>();
                 while (rs.next()) {
-                    clientes.add(new Cliente(
+                    Cliente cliente = new Cliente(
                         rs.getInt("id"),
                         rs.getString("nome"),
                         rs.getString("sobrenome"),
                         rs.getString("rg"),
                         rs.getString("cpf"),
                         rs.getString("endereco")
-                    ));
+                    );
+                    cliente.setConta(
+                        ContaDaoSql.getContaDaoSql()
+                            .getByCpf(cliente.getCpf())
+                    );
+                    clientes.add(cliente);
                 }
                 return clientes;
             }
         }
     }
-
 }

@@ -29,7 +29,22 @@ public class TelaVincularConta extends JDialog {
         this.cliente = cliente;
         this.contaController = new ContaController(); 
 
-        if (cliente.getConta() != null) {
+        boolean possuiContaObjeto = cliente.getConta() != null;
+        boolean possuiContaBanco = false;
+        
+        try {
+            Conta contaBanco = contaController.buscarContaPorCpf(cliente.getCpf());
+            possuiContaBanco = (contaBanco != null);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Erro ao verificar contas existentes no banco: " + ex.getMessage(),
+                    "Erro de Banco de Dados",
+                    JOptionPane.ERROR_MESSAGE);
+            dispose();
+            return;
+        }
+
+        if (possuiContaObjeto || possuiContaBanco) {
             JOptionPane.showMessageDialog(this,
                     "O cliente " + cliente.getNome() + " já possui uma conta vinculada.",
                     "Conta Existente",
@@ -131,7 +146,6 @@ public class TelaVincularConta extends JDialog {
                 if (depInicial < 0 || limite < 0)
                     throw new NumberFormatException("Valores não podem ser negativos.");
 
-                
                 contaController.criarContaCorrente(cliente, depInicial, limite);
 
             } else if ("Conta Investimento".equals(tipo)) {
@@ -142,7 +156,6 @@ public class TelaVincularConta extends JDialog {
                 if (montanteMin < 0 || depMin < 0 || depInicial < 0)
                     throw new NumberFormatException("Valores não podem ser negativos.");
 
-                
                 contaController.criarContaInvestimento(cliente, depInicial, montanteMin, depMin);
 
             } else {
@@ -152,7 +165,6 @@ public class TelaVincularConta extends JDialog {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
 
             JOptionPane.showMessageDialog(this,
                     "Conta vinculada ao cliente " + cliente.getNome() + " com sucesso!");

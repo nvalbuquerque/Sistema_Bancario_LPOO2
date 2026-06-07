@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.SQLIntegrityConstraintViolationException;
 
 import model.Conta;
 import model.Cliente;
@@ -37,62 +38,54 @@ public class ContaDaoSql implements ContaDao {
    @Override
     public void add(Conta conta) throws Exception {
 
-    try (
-        Connection conn = ConnectionFactory.getConnection();
+    Connection conn = null;
 
-        PreparedStatement stmtConta =
-            conn.prepareStatement(
-                insertConta,
-                Statement.RETURN_GENERATED_KEYS
-            );
-    ) {
-        stmtConta.setInt(1, conta.getNumero());
-        stmtConta.setDouble(2, conta.getSaldo());
-
-        if (conta instanceof ContaCorrente) {
-            stmtConta.setString(3, "CORRENTE");
-        } else {
-            stmtConta.setString(3, "INVESTIMENTO");
-        }
-        stmtConta.setInt(
-            4,
-            conta.getDono().getId()
-        );
-        stmtConta.executeUpdate();
+    try {
+        conn = ConnectionFactory.getConnection();
+        conn.setAutoCommit(false);
 
         int contaId;
-        try (ResultSet rs =
-                 stmtConta.getGeneratedKeys()) {
+        try (
+            PreparedStatement stmtConta =
+                conn.prepareStatement(
+                    insertConta,
+                    Statement.RETURN_GENERATED_KEYS
+                )
+        ) {
+            stmtConta.setInt(1, conta.getNumero());
+            stmtConta.setDouble(2, conta.getSaldo());
+            if (conta instanceof ContaCorrente) {
+                stmtConta.setString(3, "CORRENTE");
+            } else {
+                stmtConta.setString(3, "INVESTIMENTO");
+            }
 
-            rs.next();
-            contaId = rs.getInt(1);
+            stmtConta.setInt(4, conta.getDono().getId());
+            stmtConta.executeUpdate();
+
+            try (ResultSet rs = stmtConta.getGeneratedKeys()) {
+                rs.next();
+                contaId = rs.getInt(1);
+            }
         }
+
         if (conta instanceof ContaCorrente cc) {
             try (
                 PreparedStatement stmtCorrente =
-                    conn.prepareStatement(
-                        insertCorrente
-                    )
+                    conn.prepareStatement(insertCorrente)
             ) {
                 stmtCorrente.setInt(1, contaId);
-                stmtCorrente.setDouble(
-                    2,
-                    cc.getLimite()
-                );
+                stmtCorrente.setDouble(2, cc.getLimite());
                 stmtCorrente.executeUpdate();
             }
         }
+
         if (conta instanceof ContaInvestimento ci) {
             try (
                 PreparedStatement stmtInvestimento =
-                    conn.prepareStatement(
-                        insertInvestimento
-                    )
+                    conn.prepareStatement(insertInvestimento)
             ) {
-                stmtInvestimento.setInt(
-                    1,
-                    contaId
-                );
+                stmtInvestimento.setInt(1, contaId);
                 stmtInvestimento.setDouble(
                     2,
                     ci.getMontanteMinimo()
@@ -103,6 +96,29 @@ public class ContaDaoSql implements ContaDao {
                 );
                 stmtInvestimento.executeUpdate();
             }
+        }
+        conn.commit();
+    } catch (SQLIntegrityConstraintViolationException e) {
+
+        if (conn != null) {
+            conn.rollback();
+        }
+
+        throw new Exception(
+            "Número de conta já existe. Tente novamente.",
+            e
+        );
+    } catch (Exception e) {
+
+        if (conn != null) {
+            conn.rollback();
+        }
+        throw e;
+    } finally {
+
+        if (conn != null) {
+            conn.setAutoCommit(true);
+            conn.close();
         }
     }
 }
@@ -161,7 +177,6 @@ public class ContaDaoSql implements ContaDao {
             }
         }
     }
-
     return contas;
 }
 

@@ -19,14 +19,16 @@ public class ContaController {
         int numero = contaDao.gerarProximoNumero();
         ContaCorrente conta = new ContaCorrente(cliente, numero, depositoInicial, limite);
         contaDao.add(conta);
+        cliente.setConta(conta);
         return conta;
     }
 
     public ContaInvestimento criarContaInvestimento(Cliente cliente, double depositoInicial,
-            double montanteMinimo, double depositoMinimo) throws Exception {
+        double montanteMinimo, double depositoMinimo) throws Exception {
         int numero = contaDao.gerarProximoNumero();
         ContaInvestimento conta = new ContaInvestimento(cliente, numero, depositoInicial, montanteMinimo, depositoMinimo);
         contaDao.add(conta);
+        cliente.setConta(conta);
         return conta;
     }
 
