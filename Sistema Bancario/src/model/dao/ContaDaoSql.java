@@ -18,13 +18,13 @@ public class ContaDaoSql implements ContaDao {
     private static ContaDaoSql dao;
 
     private final String insertConta =
-    "INSERT INTO conta(numero, saldo, tipo, cliente_id) VALUES (?, ?, ?, ?)";
+    "INSERT INTO CONTA(numero, saldo, tipo, cliente_id) VALUES (?, ?, ?, ?)";
 
     private final String insertCorrente =
-    "INSERT INTO conta_corrente(conta_id, limite) VALUES (?, ?)";
+    "INSERT INTO CONTA_CORRENTE(conta_id, limite) VALUES (?, ?)";
 
     private final String insertInvestimento =
-    "INSERT INTO conta_investimento(conta_id, montante_minimo, deposito_minimo) VALUES (?, ?, ?)";
+    "INSERT INTO CONTA_INVESTIMENTO(conta_id, montante_minimo, deposito_minimo) VALUES (?, ?, ?)";
 
     private ContaDaoSql() {
     }
@@ -131,10 +131,10 @@ public class ContaDaoSql implements ContaDao {
     String sql =
         "SELECT c.*, cli.*, cc.limite, " +
         "ci.montante_minimo, ci.deposito_minimo " +
-        "FROM conta c " +
-        "JOIN cliente cli ON cli.id = c.cliente_id " +
-        "LEFT JOIN conta_corrente cc ON cc.conta_id = c.id " +
-        "LEFT JOIN conta_investimento ci ON ci.conta_id = c.id";
+        "FROM CONTA c " +
+        "JOIN CLIENTE cli ON cli.id = c.cliente_id " +
+        "LEFT JOIN CONTA_CORRENTE cc ON cc.conta_id = c.id " +
+        "LEFT JOIN CONTA_INVESTIMENTO ci ON ci.conta_id = c.id";
 
     try (
         Connection conn = ConnectionFactory.getConnection();
@@ -155,25 +155,10 @@ public class ContaDaoSql implements ContaDao {
             String tipo = rs.getString("tipo");
 
             if ("CORRENTE".equalsIgnoreCase(tipo)) {
-                contas.add(
-                    new ContaCorrente(
-                        cliente,
-                        rs.getInt("numero"),
-                        rs.getDouble("saldo"),
-                        rs.getDouble("limite")
-                    )
-                );
+                contas.add(criarContaCorrente(cliente, rs));
             }
             else if ("INVESTIMENTO".equalsIgnoreCase(tipo)) {
-                contas.add(
-                    new ContaInvestimento(
-                        cliente,
-                        rs.getInt("numero"),
-                        rs.getDouble("saldo"),
-                        rs.getDouble("montante_minimo"),
-                        rs.getDouble("deposito_minimo")
-                    )
-                );
+                contas.add(criarContaInvestimento(cliente, rs));
             }
         }
     }
@@ -186,10 +171,10 @@ public class ContaDaoSql implements ContaDao {
     String sql =
         "SELECT c.*, cli.*, cc.limite, " +
         "ci.montante_minimo, ci.deposito_minimo " +
-        "FROM conta c " +
-        "JOIN cliente cli ON cli.id = c.cliente_id " +
-        "LEFT JOIN conta_corrente cc ON cc.conta_id = c.id " +
-        "LEFT JOIN conta_investimento ci ON ci.conta_id = c.id " +
+        "FROM CONTA c " +
+        "JOIN CLIENTE cli ON cli.id = c.cliente_id " +
+        "LEFT JOIN CONTA_CORRENTE cc ON cc.conta_id = c.id " +
+        "LEFT JOIN CONTA_INVESTIMENTO ci ON ci.conta_id = c.id " +
         "WHERE c.id = ?";
 
     try (
@@ -214,20 +199,9 @@ public class ContaDaoSql implements ContaDao {
             String tipo = rs.getString("tipo");
 
             if ("CORRENTE".equalsIgnoreCase(tipo)) {
-                return new ContaCorrente(
-                    cliente,
-                    rs.getInt("numero"),
-                    rs.getDouble("saldo"),
-                    rs.getDouble("limite")
-                );
+                return criarContaCorrente(cliente, rs);
             }
-            return new ContaInvestimento(
-                cliente,
-                rs.getInt("numero"),
-                rs.getDouble("saldo"),
-                rs.getDouble("montante_minimo"),
-                rs.getDouble("deposito_minimo")
-            );
+            return criarContaInvestimento(cliente, rs);
         }
     }
 }
@@ -236,7 +210,7 @@ public class ContaDaoSql implements ContaDao {
     public void update(Conta conta) throws Exception {
 
     String sqlConta =
-        "UPDATE conta " +
+        "UPDATE CONTA " +
         "SET numero = ?, saldo = ? " +
         "WHERE numero = ?";
 
@@ -253,8 +227,8 @@ public class ContaDaoSql implements ContaDao {
     if (conta instanceof ContaCorrente cc) {
 
         String sqlCorrente =
-            "UPDATE conta_corrente cc " +
-            "JOIN conta c ON c.id = cc.conta_id " +
+            "UPDATE CONTA_CORRENTE cc " +
+            "JOIN CONTA c ON c.id = cc.conta_id " +
             "SET cc.limite = ? " +
             "WHERE c.numero = ?";
 
@@ -272,8 +246,8 @@ public class ContaDaoSql implements ContaDao {
     if (conta instanceof ContaInvestimento ci) {
 
         String sqlInvestimento =
-            "UPDATE conta_investimento ci " +
-            "JOIN conta c ON c.id = ci.conta_id " +
+            "UPDATE CONTA_INVESTIMENTO ci " +
+            "JOIN CONTA c ON c.id = ci.conta_id " +
             "SET ci.montante_minimo = ?, " +
             "ci.deposito_minimo = ? " +
             "WHERE c.numero = ?";
@@ -298,7 +272,7 @@ public class ContaDaoSql implements ContaDao {
     public void delete(Conta conta) throws Exception {
 
     String sql =
-        "DELETE FROM conta WHERE numero = ?";
+        "DELETE FROM CONTA WHERE numero = ?";
 
     try (
         Connection conn = ConnectionFactory.getConnection();
@@ -317,7 +291,7 @@ public class ContaDaoSql implements ContaDao {
     public void deleteAll() throws Exception {
 
         String sql =
-        "DELETE FROM conta";
+        "DELETE FROM CONTA";
 
     try (
         Connection conn = ConnectionFactory.getConnection();
@@ -334,10 +308,10 @@ public class ContaDaoSql implements ContaDao {
     String sql =
         "SELECT c.*, cli.*, cc.limite, " +
         "ci.montante_minimo, ci.deposito_minimo " +
-        "FROM conta c " +
-        "JOIN cliente cli ON cli.id = c.cliente_id " +
-        "LEFT JOIN conta_corrente cc ON cc.conta_id = c.id " +
-        "LEFT JOIN conta_investimento ci ON ci.conta_id = c.id " +
+        "FROM CONTA c " +
+        "JOIN CLIENTE cli ON cli.id = c.cliente_id " +
+        "LEFT JOIN CONTA_CORRENTE cc ON cc.conta_id = c.id " +
+        "LEFT JOIN CONTA_INVESTIMENTO ci ON ci.conta_id = c.id " +
         "WHERE cli.cpf = ?";
 
     try (
@@ -367,22 +341,11 @@ public class ContaDaoSql implements ContaDao {
 
             if ("CORRENTE".equalsIgnoreCase(tipo)) {
 
-                return new ContaCorrente(
-                    cliente,
-                    rs.getInt("numero"),
-                    rs.getDouble("saldo"),
-                    rs.getDouble("limite")
-                );
+                return criarContaCorrente(cliente, rs);
             }
             if ("INVESTIMENTO".equalsIgnoreCase(tipo)) {
 
-                return new ContaInvestimento(
-                    cliente,
-                    rs.getInt("numero"),
-                    rs.getDouble("saldo"),
-                    rs.getDouble("montante_minimo"),
-                    rs.getDouble("deposito_minimo")
-                );
+                return criarContaInvestimento(cliente, rs);
             }
         }
     }
@@ -392,7 +355,7 @@ public class ContaDaoSql implements ContaDao {
     @Override
     public void updateSaldo(Conta conta) throws Exception {
 
-        String sql = "UPDATE conta SET saldo = ? WHERE numero = ?";
+        String sql = "UPDATE CONTA SET saldo = ? WHERE numero = ?";
         
         try (
             Connection conn = ConnectionFactory.getConnection();
@@ -409,7 +372,7 @@ public class ContaDaoSql implements ContaDao {
     public int gerarProximoNumero() throws Exception {
 
     String sql =
-        "SELECT MAX(CAST(numero AS UNSIGNED)) AS ultimo FROM conta";
+        "SELECT MAX(CAST(numero AS UNSIGNED)) AS ultimo FROM CONTA";
 
     try (
         Connection conn = ConnectionFactory.getConnection();
@@ -423,5 +386,27 @@ public class ContaDaoSql implements ContaDao {
 
         return 1;
         }
+    }
+
+    private ContaCorrente criarContaCorrente(Cliente cliente, ResultSet rs) throws Exception {
+        double saldo = rs.getDouble("saldo");
+        ContaCorrente conta = new ContaCorrente(
+            cliente,
+            rs.getInt("numero"),
+            Math.max(0, saldo),
+            rs.getDouble("limite")
+        );
+        conta.setSaldo(saldo);
+        return conta;
+    }
+
+    private ContaInvestimento criarContaInvestimento(Cliente cliente, ResultSet rs) throws Exception {
+        return new ContaInvestimento(
+            cliente,
+            rs.getInt("numero"),
+            rs.getDouble("saldo"),
+            rs.getDouble("montante_minimo"),
+            rs.getDouble("deposito_minimo")
+        );
     }
 }

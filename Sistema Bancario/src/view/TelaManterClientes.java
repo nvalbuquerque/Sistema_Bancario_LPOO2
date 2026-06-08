@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Comparator;
 
 import controller.ClienteController;
+import controller.ContaController;
+import controller.OperacaoController;
 import model.*;
 import model.dao.ClienteDao;
 import model.dao.DaoType;
@@ -23,10 +25,14 @@ public class TelaManterClientes extends JFrame {
     private ClienteTableModel tableModel;
     private JTextField txtFiltro;
     private ClienteController clienteController;
+    private ContaController contaController;
+    private OperacaoController operacaoController;
 
     public TelaManterClientes() {
         ClienteDao clienteDao = (ClienteDao) DataFactory.getClienteDao(DaoType.SQL);
         clienteController = new ClienteController(clienteDao);
+        contaController = new ContaController();
+        operacaoController = new OperacaoController();
 
         setTitle("Dashboard de Clientes do Banco");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -287,7 +293,34 @@ public class TelaManterClientes extends JFrame {
             return;
         }
 
-        TelaVincularConta telaVincular = new TelaVincularConta(this, clienteSelecionado);
+        if (clienteSelecionado.getConta() != null) {
+            JOptionPane.showMessageDialog(this,
+                    "O cliente " + clienteSelecionado.getNome() + " já possui uma conta vinculada.",
+                    "Conta Existente",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            Conta contaBanco = contaController.buscarContaPorCpf(clienteSelecionado.getCpf());
+            if (contaBanco != null) {
+                clienteSelecionado.setConta(contaBanco);
+                JOptionPane.showMessageDialog(this,
+                        "O cliente " + clienteSelecionado.getNome() + " já possui uma conta vinculada.",
+                        "Conta Existente",
+                        JOptionPane.WARNING_MESSAGE);
+                atualizarTabela();
+                return;
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Erro ao verificar contas existentes no banco: " + ex.getMessage(),
+                    "Erro de Banco de Dados",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        TelaVincularConta telaVincular = new TelaVincularConta(this, clienteSelecionado, contaController);
         telaVincular.setLocationRelativeTo(this);
         telaVincular.setVisible(true);
         atualizarTabela();
@@ -310,7 +343,7 @@ public class TelaManterClientes extends JFrame {
             return;
         }
 
-        TelaOperacoesConta telaOperacoes = new TelaOperacoesConta(this, conta);
+        TelaOperacoesConta telaOperacoes = new TelaOperacoesConta(this, conta, contaController, operacaoController);
         telaOperacoes.setLocationRelativeTo(this);
         telaOperacoes.setVisible(true);
         atualizarTabela();

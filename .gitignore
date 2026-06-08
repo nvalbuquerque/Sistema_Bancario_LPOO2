@@ -1,0 +1,23 @@
+### IntelliJ IDEA ###
+.idea/
+*.iml
+
+### Java build output ###
+out/
+**/out/
+*.class
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+bin/
+**/bin/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store

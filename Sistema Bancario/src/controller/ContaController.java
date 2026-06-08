@@ -56,4 +56,8 @@ public class ContaController {
         conta.remunera();
         contaDao.updateSaldo(conta);
     }
+
+    public void atualizarSaldo(Conta conta) throws Exception {
+        contaDao.updateSaldo(conta);
+    }
 }

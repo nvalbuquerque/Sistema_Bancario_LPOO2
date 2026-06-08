@@ -1,75 +1,152 @@
 package view;
 
+import controller.ContaController;
+import controller.OperacaoController;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.text.DecimalFormat;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 import model.Conta;
 import model.ContaCorrente;
-import controller.ContaController; 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.text.DecimalFormat;
 
 public class TelaOperacoesConta extends JDialog {
 
-    private Conta conta;
-    private ContaController contaController; 
+    private JTextField txtCpf;
+    private JButton btnBuscarConta;
+    private Conta contaSelecionada;
+    private ContaController contaController;
+    private OperacaoController operacaoController;
     private JLabel lblSaldoAtual;
     private JTextField txtValor;
+    private JButton btnSaque;
+    private JButton btnDeposito;
+    private JButton btnVerSaldo;
+    private JButton btnRemunera;
     private final DecimalFormat df = new DecimalFormat("R$ #,##0.00");
 
     public TelaOperacoesConta(Frame owner, Conta conta) {
-        super(owner, true);
-        this.conta = conta;
-        this.contaController = new ContaController(); 
+        this(owner, conta, new ContaController(), new OperacaoController());
+    }
 
-        setTitle("Operações da Conta: " + conta.getNumero() + " (" + conta.getDono().getNome() + ")");
-        setBounds(250, 250, 400, 300);
+    public TelaOperacoesConta(Frame owner, ContaController contaController,
+            OperacaoController operacaoController) {
+        this(owner, null, contaController, operacaoController);
+    }
+
+    public TelaOperacoesConta(Frame owner, Conta conta,
+            ContaController contaController, OperacaoController operacaoController) {
+        super(owner, true);
+        this.contaSelecionada = conta;
+        this.contaController = contaController;
+        this.operacaoController = operacaoController;
+
+        setTitle("Operacoes de Conta");
+        setBounds(250, 250, 470, 320);
         setLayout(new BorderLayout(10, 10));
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        JPanel painelCentro = new JPanel(new GridLayout(3, 1, 5, 5));
+        JPanel painelBusca = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        painelBusca.add(new JLabel("CPF:"));
+        txtCpf = new JTextField(14);
+        painelBusca.add(txtCpf);
 
+        btnBuscarConta = new JButton("Buscar Conta");
+        btnBuscarConta.addActionListener(e -> buscarConta());
+        painelBusca.add(btnBuscarConta);
+        add(painelBusca, BorderLayout.NORTH);
+
+        JPanel painelCentro = new JPanel(new GridLayout(3, 1, 5, 5));
         lblSaldoAtual = new JLabel();
         painelCentro.add(lblSaldoAtual);
-
-        painelCentro.add(new JLabel("Valor da Operação (R$):"));
+        painelCentro.add(new JLabel("Valor da Operacao (R$):"));
         txtValor = new JTextField(10);
         painelCentro.add(txtValor);
+        add(painelCentro, BorderLayout.CENTER);
 
-        atualizarSaldoVisual();
-        add(painelCentro, BorderLayout.NORTH);
-
-        JPanel painelBotoes = new JPanel(new GridLayout(2, 2, 10, 10));
-
-        JButton btnSaque = new JButton("Sacar");
-        JButton btnDeposito = new JButton("Depositar");
-        JButton btnVerSaldo = new JButton("Ver Saldo");
-        JButton btnRemunera = new JButton("Remunerar");
+        JPanel painelBotoes = new JPanel(new GridLayout(3, 2, 10, 10));
+        btnSaque = new JButton("Sacar");
+        btnDeposito = new JButton("Depositar");
+        btnVerSaldo = new JButton("Ver Saldo");
+        btnRemunera = new JButton("Remunerar");
+        JButton btnFechar = new JButton("Fechar");
 
         btnSaque.addActionListener(e -> efetuarSaque());
         btnDeposito.addActionListener(e -> efetuarDeposito());
         btnVerSaldo.addActionListener(e -> mostrarSaldo());
         btnRemunera.addActionListener(e -> remunerarConta());
+        btnFechar.addActionListener(e -> dispose());
 
         painelBotoes.add(btnSaque);
         painelBotoes.add(btnDeposito);
         painelBotoes.add(btnVerSaldo);
         painelBotoes.add(btnRemunera);
+        painelBotoes.add(btnFechar);
+        add(painelBotoes, BorderLayout.SOUTH);
 
-        add(painelBotoes, BorderLayout.CENTER);
+        if (contaSelecionada != null) {
+            txtCpf.setText(contaSelecionada.getDono().getCpf());
+            atualizarSaldoVisual();
+            habilitarOperacoes(true);
+        } else {
+            lblSaldoAtual.setText("Nenhuma conta selecionada.");
+            habilitarOperacoes(false);
+        }
+    }
 
-        JButton btnFechar = new JButton("Fechar");
-        btnFechar.addActionListener(e -> dispose());
-        add(btnFechar, BorderLayout.SOUTH);
+    private void buscarConta() {
+        try {
+            String cpf = txtCpf.getText().trim().replaceAll("\\D", "");
+            contaSelecionada = contaController.buscarContaPorCpf(cpf);
+
+            if (contaSelecionada == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Nenhuma conta encontrada para este CPF.",
+                        "Conta nao encontrada",
+                        JOptionPane.WARNING_MESSAGE);
+                lblSaldoAtual.setText("Nenhuma conta selecionada.");
+                habilitarOperacoes(false);
+                return;
+            }
+
+            atualizarSaldoVisual();
+            habilitarOperacoes(true);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Erro ao buscar conta: " + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void habilitarOperacoes(boolean habilitar) {
+        txtValor.setEnabled(habilitar);
+        btnSaque.setEnabled(habilitar);
+        btnDeposito.setEnabled(habilitar);
+        btnVerSaldo.setEnabled(habilitar);
+        btnRemunera.setEnabled(habilitar);
     }
 
     private void atualizarSaldoVisual() {
-        lblSaldoAtual.setText("Saldo Atual: " + df.format(conta.getSaldo()));
+        lblSaldoAtual.setText("Saldo Atual: " + df.format(contaSelecionada.getSaldo()));
+        setTitle("Operacoes da Conta: " + contaSelecionada.getNumero()
+                + " (" + contaSelecionada.getDono().getNome() + ")");
     }
 
     private void mostrarSaldo() {
         JOptionPane.showMessageDialog(this,
-                "Saldo atual na conta " + conta.getNumero() + ":\n" + df.format(conta.getSaldo()),
-                "Ver Saldo", JOptionPane.INFORMATION_MESSAGE);
+                "Saldo atual na conta " + contaSelecionada.getNumero()
+                        + ":\n" + df.format(contaSelecionada.getSaldo()),
+                "Ver Saldo",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     private double getValorDigitado() {
@@ -77,34 +154,38 @@ public class TelaOperacoesConta extends JDialog {
             return Double.parseDouble(txtValor.getText());
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this,
-                    "Insira um valor numérico válido.",
-                    "Erro", JOptionPane.ERROR_MESSAGE);
+                    "Insira um valor numerico valido.",
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE);
             return -1;
         }
     }
 
     private void efetuarSaque() {
         double valor = getValorDigitado();
-        if (valor == -1) return;
+        if (valor == -1) {
+            return;
+        }
 
         try {
-            boolean sucesso = contaController.sacar(conta, valor);
+            boolean sucesso = operacaoController.sacar(contaSelecionada, valor);
 
             if (sucesso) {
+                contaController.atualizarSaldo(contaSelecionada);
                 JOptionPane.showMessageDialog(this,
                         "Saque de " + df.format(valor) + " efetuado com sucesso!",
-                        "Saque", JOptionPane.INFORMATION_MESSAGE);
+                        "Saque",
+                        JOptionPane.INFORMATION_MESSAGE);
                 atualizarSaldoVisual();
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Saque não permitido. Verifique as regras e os limites da sua conta.",
-                        "Operação Negada",
+                        "Saque nao permitido. Verifique as regras e os limites da sua conta.",
+                        "Operacao Negada",
                         JOptionPane.WARNING_MESSAGE);
             }
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Erro de comunicação com o banco de dados: " + ex.getMessage(),
+                    "Erro de comunicacao com o banco de dados: " + ex.getMessage(),
                     "Erro no Sistema",
                     JOptionPane.ERROR_MESSAGE);
         }
@@ -114,26 +195,29 @@ public class TelaOperacoesConta extends JDialog {
 
     private void efetuarDeposito() {
         double valor = getValorDigitado();
-        if (valor == -1) return;
+        if (valor == -1) {
+            return;
+        }
 
         try {
-            boolean sucesso = contaController.depositar(conta, valor);
+            boolean sucesso = operacaoController.depositar(contaSelecionada, valor);
 
             if (sucesso) {
+                contaController.atualizarSaldo(contaSelecionada);
                 JOptionPane.showMessageDialog(this,
-                        "Depósito de " + df.format(valor) + " efetuado com sucesso!",
-                        "Depósito", JOptionPane.INFORMATION_MESSAGE);
+                        "Deposito de " + df.format(valor) + " efetuado com sucesso!",
+                        "Deposito",
+                        JOptionPane.INFORMATION_MESSAGE);
                 atualizarSaldoVisual();
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Depósito não permitido. Verifique as regras (ex: valor negativo ou depósito mínimo exigido).",
-                        "Operação Negada",
+                        "Deposito nao permitido. Verifique as regras da sua conta.",
+                        "Operacao Negada",
                         JOptionPane.WARNING_MESSAGE);
             }
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Erro de comunicação com o banco de dados: " + ex.getMessage(),
+                    "Erro de comunicacao com o banco de dados: " + ex.getMessage(),
                     "Erro no Sistema",
                     JOptionPane.ERROR_MESSAGE);
         }
@@ -143,22 +227,33 @@ public class TelaOperacoesConta extends JDialog {
 
     private void remunerarConta() {
         try {
-            contaController.remunerar(conta);
+            if (contaSelecionada instanceof ContaCorrente && contaSelecionada.getSaldo() <= 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Remuneracao nao aplicada: saldo nao positivo.",
+                        "Remuneracao",
+                        JOptionPane.WARNING_MESSAGE);
+                atualizarSaldoVisual();
+                return;
+            }
 
-            String tipoConta = (conta instanceof ContaCorrente)
+            operacaoController.remunerar(contaSelecionada);
+            contaController.atualizarSaldo(contaSelecionada);
+
+            String tipoConta = (contaSelecionada instanceof ContaCorrente)
                     ? "Conta Corrente (1%)"
                     : "Conta Investimento (2%)";
 
             JOptionPane.showMessageDialog(this,
-                    "Remuneração aplicada com sucesso para: " + tipoConta,
-                    "Remuneração", JOptionPane.INFORMATION_MESSAGE);
+                    "Remuneracao aplicada com sucesso para: " + tipoConta,
+                    "Remuneracao",
+                    JOptionPane.INFORMATION_MESSAGE);
 
             atualizarSaldoVisual();
-
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Erro ao aplicar remuneração no banco de dados: " + e.getMessage(),
-                    "Erro", JOptionPane.ERROR_MESSAGE);
+                    "Erro ao aplicar remuneracao no banco de dados: " + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }

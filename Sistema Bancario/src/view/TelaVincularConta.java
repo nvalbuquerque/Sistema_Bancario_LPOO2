@@ -1,17 +1,29 @@
 package view;
 
-import model.*;
-import controller.ContaController; 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import controller.ContaController;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+import model.Cliente;
 
 public class TelaVincularConta extends JDialog {
 
     private Cliente cliente;
-    private ContaController contaController; 
+    private ContaController contaController;
 
     private JComboBox<String> cmbTipoConta;
     private JPanel painelCartoes;
@@ -24,34 +36,10 @@ public class TelaVincularConta extends JDialog {
     private JTextField txtDepMinCI;
     private JTextField txtDepIniCI;
 
-    public TelaVincularConta(Frame owner, Cliente cliente) {
+    public TelaVincularConta(Frame owner, Cliente cliente, ContaController contaController) {
         super(owner, true);
         this.cliente = cliente;
-        this.contaController = new ContaController(); 
-
-        boolean possuiContaObjeto = cliente.getConta() != null;
-        boolean possuiContaBanco = false;
-        
-        try {
-            Conta contaBanco = contaController.buscarContaPorCpf(cliente.getCpf());
-            possuiContaBanco = (contaBanco != null);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao verificar contas existentes no banco: " + ex.getMessage(),
-                    "Erro de Banco de Dados",
-                    JOptionPane.ERROR_MESSAGE);
-            dispose();
-            return;
-        }
-
-        if (possuiContaObjeto || possuiContaBanco) {
-            JOptionPane.showMessageDialog(this,
-                    "O cliente " + cliente.getNome() + " já possui uma conta vinculada.",
-                    "Conta Existente",
-                    JOptionPane.WARNING_MESSAGE);
-            dispose();
-            return;
-        }
+        this.contaController = contaController;
 
         setTitle("Vincular Conta ao Cliente: " + cliente.getNome());
         setBounds(200, 200, 500, 400);
@@ -105,7 +93,7 @@ public class TelaVincularConta extends JDialog {
         JPanel painelCC = new JPanel(new GridLayout(2, 2, 5, 5));
         painelCC.setBorder(BorderFactory.createTitledBorder("Dados Conta Corrente"));
 
-        painelCC.add(new JLabel("Depósito Inicial (R$):"));
+        painelCC.add(new JLabel("Deposito Inicial (R$):"));
         txtDepIniCC = new JTextField();
         painelCC.add(txtDepIniCC);
 
@@ -120,15 +108,15 @@ public class TelaVincularConta extends JDialog {
         JPanel painelCI = new JPanel(new GridLayout(3, 2, 5, 5));
         painelCI.setBorder(BorderFactory.createTitledBorder("Dados Conta Investimento"));
 
-        painelCI.add(new JLabel("Montante Mínimo:"));
+        painelCI.add(new JLabel("Montante Minimo:"));
         txtMontanteMinCI = new JTextField();
         painelCI.add(txtMontanteMinCI);
 
-        painelCI.add(new JLabel("Depósito Mínimo:"));
+        painelCI.add(new JLabel("Deposito Minimo:"));
         txtDepMinCI = new JTextField();
         painelCI.add(txtDepMinCI);
 
-        painelCI.add(new JLabel("Depósito Inicial:"));
+        painelCI.add(new JLabel("Deposito Inicial:"));
         txtDepIniCI = new JTextField();
         painelCI.add(txtDepIniCI);
 
@@ -143,8 +131,9 @@ public class TelaVincularConta extends JDialog {
                 double depInicial = Double.parseDouble(txtDepIniCC.getText());
                 double limite = Double.parseDouble(txtLimiteCC.getText());
 
-                if (depInicial < 0 || limite < 0)
-                    throw new NumberFormatException("Valores não podem ser negativos.");
+                if (depInicial < 0 || limite < 0) {
+                    throw new NumberFormatException("Valores nao podem ser negativos.");
+                }
 
                 contaController.criarContaCorrente(cliente, depInicial, limite);
 
@@ -153,14 +142,15 @@ public class TelaVincularConta extends JDialog {
                 double depMin = Double.parseDouble(txtDepMinCI.getText());
                 double depInicial = Double.parseDouble(txtDepIniCI.getText());
 
-                if (montanteMin < 0 || depMin < 0 || depInicial < 0)
-                    throw new NumberFormatException("Valores não podem ser negativos.");
+                if (montanteMin < 0 || depMin < 0 || depInicial < 0) {
+                    throw new NumberFormatException("Valores nao podem ser negativos.");
+                }
 
                 contaController.criarContaInvestimento(cliente, depInicial, montanteMin, depMin);
 
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Selecione um tipo de conta válido.",
+                        "Selecione um tipo de conta valido.",
                         "Erro",
                         JOptionPane.ERROR_MESSAGE);
                 return;
@@ -172,20 +162,20 @@ public class TelaVincularConta extends JDialog {
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this,
-                    "Valores inválidos. Verifique se todos os campos numéricos foram preenchidos corretamente.",
+                    "Valores invalidos. Verifique se todos os campos numericos foram preenchidos corretamente.",
                     "Erro de Dados",
                     JOptionPane.ERROR_MESSAGE);
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this,
                     ex.getMessage(),
-                    "Erro de Regra de Negócio",
+                    "Erro de Regra de Negocio",
                     JOptionPane.ERROR_MESSAGE);
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Erro ao salvar no banco de dados: " + ex.getMessage(),
-                    "Erro de Conexão",
+                    "Erro de Conexao",
                     JOptionPane.ERROR_MESSAGE);
         }
     }

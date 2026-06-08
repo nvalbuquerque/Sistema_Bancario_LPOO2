@@ -22,7 +22,7 @@ public class ContaInvestimento extends Conta {
     public boolean deposita(double valor) {
 
         if (valor < depositoMinimo) {
-            System.out.println("Depósito inválido: O valor deve ser >= depósito mínimo.");
+            System.out.println("Depósito invalido: O valor deve ser >= depósito mínimo.");
             return false;
         }
 
@@ -33,13 +33,12 @@ public class ContaInvestimento extends Conta {
     public boolean saca(double valor) {
 
         if (valor <= 0) {
-            throw new IllegalArgumentException(
-                "Valor de saque deve ser maior que zero."
-            );
+            System.out.println("Saque invalido: O valor deve ser positivo.");
+            return false;
         }
 
         if ((saldo - valor) < montanteMinimo) {
-            System.out.println("Saque inválido: Saldo insuficiente.");
+            System.out.println("Saque invalido: Saldo insuficiente.");
             return false;
         }
 
@@ -54,10 +53,6 @@ public class ContaInvestimento extends Conta {
 
     @Override
     public void remunera() {
-        if (saldo <= 0) {
-            throw new IllegalStateException("Saldo negativo.");
-        }
-        // Conta Corrente recebe 2% se estiver com saldo positivo
         saldo += saldo * 0.02;
     }
 
